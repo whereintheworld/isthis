@@ -1,95 +1,78 @@
 <!DOCTYPE html>
 <html>
 <head>
-	<meta charset="UTF-8">
-	<title>GeoGuessr Game</title>
+	<title>GeoGuessr</title>
 	<style>
 		body {
 			margin: 0;
 			padding: 0;
 		}
-		
-		#street-view {
-			height: 500px;
-			width: 100%;
-		}
-		
 		#map {
-			height: 500px;
+			height: 100vh;
 			width: 100%;
+			position: absolute;
+			top: 0;
+			left: 0;
 		}
-		
 		#minimap {
-			position: absolute;
-			bottom: 0;
-			right: 0;
-			height: 150px;
+			height: 200px;
 			width: 200px;
-			z-index: 1;
-		}
-		
-		button {
-			font-size: 32px;
-			margin-top: 50px;
-			padding: 20px 40px;
-			border: none;
-			border-radius: 5px;
-			background-color: #0077FF;
-			color: white;
-			cursor: pointer;
-		}
-		
-		#guess-button {
 			position: absolute;
-			bottom: 20px;
-			left: 50%;
-			transform: translateX(-50%);
-			display: none;
+			bottom: 10px;
+			right: 10px;
+			z-index: 1;
+			background-color: #fff;
+			box-shadow: 0 0 5px #000;
+		}
+		#timer {
+			position: absolute;
+			top: 10px;
+			right: 10px;
+			font-size: 24px;
+			color: #fff;
+			text-shadow: 0 0 5px #000;
+		}
+		#score {
+			position: absolute;
+			top: 10px;
+			left: 10px;
+			font-size: 24px;
+			color: #fff;
+			text-shadow: 0 0 5px #000;
 		}
 	</style>
 </head>
 <body>
-	<div id="street-view"></div>
-	<div id="minimap"></div>
-	<button id="random-button">Random</button>
 	<div id="map"></div>
-	<button id="guess-button">Guess</button>
+	<div id="minimap"></div>
+	<div id="timer">3:00</div>
+	<div id="score">Score: 0</div>
+	<button id="random-button">Random</button>
+
 	<script src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY"></script>
 	<script>
-		var map, streetView, randomLat, randomLng, randomPano, guessMarker;
-		
+		var map;
+		var panorama;
+		var timer;
+		var score = 0;
+		var locations = [
+			{lat: 37.7749, lng: -122.4194, name: "San Francisco"},
+			{lat: 40.7128, lng: -74.0060, name: "New York City"},
+			{lat: 51.5074, lng: -0.1278, name: "London"},
+			{lat: -33.8599, lng: 151.2111, name: "Sydney"},
+			{lat: 48.8566, lng: 2.3522, name: "Paris"}
+		];
+		var currentLocation;
+
 		function initMap() {
-			var mapOptions = {
+			map = new google.maps.Map(document.getElementById('map'), {
 				center: {lat: 0, lng: 0},
 				zoom: 1
-			};
-			map = new google.maps.Map(document.getElementById('map'), mapOptions);
-			streetView = new google.maps.StreetViewPanorama(document.getElementById('street-view'));
-			map.setStreetView(streetView);
-			guessMarker = new google.maps.Marker({
-				map: map,
-				draggable: true,
-				animation: google.maps.Animation.DROP,
-				icon: 'http://maps.google.com/mapfiles/ms/icons/blue-dot.png'
 			});
-			google.maps.event.addListener(guessMarker, 'dragend', function() {
-				document.getElementById('guess-button').style.display = 'block';
-			});
-			document.getElementById('random-button').addEventListener('click', function() {
-				getRandomLocation();
-				document.getElementById('random-button').style.display = 'none';
-				document.getElementById('guess-button').style.display = 'none';
-			});
-			document.getElementById('guess-button').addEventListener('click', function() {
-				showGuess();
-			});
-		}
-		
-		function getRandomLocation() {
-			var sv = new google.maps.StreetViewService();
-			sv.getPanorama({location: {lat: 0, lng: 0}, radius: 1000000}, function(data, status) {
-				if (status === 'OK') {
-					randomLat = Math.random() * (data.location.latLng.lat() + 60 - data.location.latLng.lat() - 40) + data.location.latLng.lat() - 40;
-					randomLng = Math.random() * (data.location.latLng.lng() + 70 - data.location.latLng.lng() - 70) + data.location.latLng.lng() - 70;
-					randomPano = data.location.pano;
-					street
+
+			panorama = new google.maps.StreetViewPanorama(
+				document.getElementById('map'), {
+					addressControl: false,
+					linksControl: false,
+					panControl: false,
+					zoomControl: false
