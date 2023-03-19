@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="UTF-8">
+	<title>GeoGuessr Game</title>
+	<style>
+		body {
+			margin: 0;
+			padding: 0;
+		}
+		
+		#street-view {
+			width: 100%;
+			height: 100vh;
+		}
+		
+		#map {
+			position: fixed;
+			top: 0;
+			right: 0;
+			width: 400px;
+			height: 400px;
+			z-index: 1;
+		}
+		
+		#guess-form {
+			position: fixed;
+			bottom: 0;
+			left: 0;
+			padding: 20px;
+			background-color: #fff;
+			z-index: 1;
+		}
+		
+		button {
+			margin-top: 10px;
+			padding: 10px;
+			background-color: #4CAF50;
+			color: #fff;
+			border: none;
+			cursor: pointer;
+		}
+	</style>
+</head>
+<body>
+	<div id="street-view"></div>
+	<div id="map"></div>
+	<form id="guess-form">
+		<label for="guess-lat">Latitude:</label>
+		<input type="text" id="guess-lat" name="guess-lat"><br>
+		<label for="guess-lng">Longitude:</label>
+		<input type="text" id="guess-lng" name="guess-lng"><br>
+		<button type="submit">Guess</button>
+	</form>
+	<script src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&callback=initMap" async defer></script>
+	<script>
+		var panorama;
+		var map;
+		var marker;
+		var lat;
+		var lng;
+		
+		function initMap() {
+			var sv = new google.maps.StreetViewService();
+			panorama = new google.maps.StreetViewPanorama(
+				document.getElementById('street-view'), {
+					addressControl: false,
+					disableDoubleClickZoom: true,
+					enableCloseButton: false,
+					panControl: false,
+					zoomControl: false
+				});
+			panorama.addListener('position_changed', function() {
+				lat = panorama.getPosition().lat();
+				lng = panorama.getPosition().lng();
+				if (marker) {
+					marker.setPosition(new google.maps.LatLng(lat, lng));
+				} else {
+					marker = new google.maps.Marker({
+						position: new google.maps.LatLng(lat, lng),
+						map: map
+					});
+				}
+			});
+			var mapOptions = {
+				zoom: 14,
+				center: new google.maps.LatLng(51.5074, -0.1278)
+			};
+			map = new google.maps.Map(document.getElementById('map'), mapOptions);
+			map.addListener('click', function(e) {
+				if (marker) {
+					marker.setPosition(e.latLng);
+				} else {
+					marker = new google.maps.Marker({
+						position: e.latLng,
+						map: map
+					});
+				}
+				lat = e.latLng.lat();
+				lng = e.latLng.lng();
+			});
+			guessForm.addEventListener('submit', function(e) {
+				e.preventDefault();
+				var guessLat = document.getElementById('guess-lat').value;
+				var guessLng = document.getElementById('guess-lng').value;
+				var distance = getDistanceFromLatLonInKm(lat, lng, guessLat
